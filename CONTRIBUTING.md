@@ -1,102 +1,172 @@
-# Contributing to the Project
+# Contributing to Known
 
-Thank you for taking the time to contribute! Please follow these guidelines to ensure a smooth and productive workflow. 🚀🚀🚀
+Thank you for your interest in contributing to Known! This document provides guidelines and instructions for contributing to the project.
 
-To get started with the project, please refer to the [README.md](https://github.com/suitenumerique/docs/blob/main/README.md) for detailed instructions on how to run Docs locally.
+## Table of Contents
 
-Contributors are required to sign off their commits with `git commit --signoff`: this confirms that they have read and accepted the [Developer's Certificate of Origin 1.1](https://developercertificate.org/). For security reasons we also require [signing your commits with your SSH or GPG key](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) with `git commit -S`.
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Workflow](#development-workflow)
+- [Coding Standards](#coding-standards)
+- [Testing](#testing)
+- [Submitting Changes](#submitting-changes)
+- [Reporting Bugs](#reporting-bugs)
+- [Feature Requests](#feature-requests)
 
-Please also check out our [dev handbook](https://suitenumerique.gitbook.io/handbook) to learn our best practices.
+## Code of Conduct
 
-## Help us with translations
+This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
-You can help us with translations on [Crowdin](https://crowdin.com/project/lasuite-docs).
-Your language is not there? Request it on our Crowdin page 😊 or ping us on [Matrix](https://matrix.to/#/#docs-official:matrix.org) and let us know if you can help with translations and/or proofreading.
+## Getting Started
 
-## Creating an Issue
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/known.git`
+3. Add the upstream repository: `git remote add upstream https://github.com/Eric-Hei/known.git`
+4. Create a new branch: `git checkout -b feature/your-feature-name`
 
-When creating an issue, please provide the following details:
+## Development Workflow
 
-1.  **Title**: A concise and descriptive title for the issue.
-2.  **Description**: A detailed explanation of the issue, including relevant context or screenshots if applicable.
-3.  **Steps to Reproduce**: If the issue is a bug, include the steps needed to reproduce the problem.
-4.  **Expected vs. Actual Behavior**: Describe what you expected to happen and what actually happened.
-5.  **Labels**: Add appropriate labels to categorize the issue (e.g., bug, feature request, documentation).
+### Prerequisites
 
-## Selecting an issue
+- Node.js (v18+) and Yarn
 
-We use a [GitHub Project](https://github.com/orgs/numerique-gouv/projects/13) in order to prioritize our workload. 
+### Setting Up the Development Environment
 
-Please check in priority the issues that are in the **todo** column and have a higher priority (P0 -> P2). 
+```bash
+# Navigate to the frontend app
+cd src/frontend/apps/impress
 
-## Commit Message Format
+# Install dependencies
+yarn install
 
-All commit messages must adhere to the following format:
-
-`<gitmoji>(type) title description`
-
-*   <**gitmoji**>: Use a gitmoji to represent the purpose of the commit. For example, ✨ for adding a new feature or 🔥 for removing something, see the list [here](https://gitmoji.dev/).
-*   **(type)**: Describe the type of change. Common types include `backend`, `frontend`, `CI`, `docker` etc...
-*   **title**: A short, descriptive title for the change (*)
-*   **blank line after the commit title
-*   **description**: Include additional details on why you made the changes (**).
-    
-    (*) ⚠️ **Make sure you add no space between the emoji and the (type) but add a space after the closing parenthesis of the type and use no caps!**
-    (**) ⚠️ **Commit description message is mandatory and shouldn't be too long**
-
-### Example Commit Message
-
-```
-✨(frontend) add user authentication logic 
-
-Implemented login and signup features, and integrated OAuth2 for social login.
+# Run the development server
+yarn dev
 ```
 
-## Changelog Update
+The app will be available at `http://localhost:3000`.
 
-Please add a line to the changelog describing your development. The changelog entry should include a brief summary of the changes, this helps in tracking changes effectively and keeping everyone informed. We usually include the title of the pull request, followed by the pull request ID to finish the log entry. The changelog line should be less than 80 characters in total.
+### Building for Production
 
-### Example Changelog Message
+```bash
+# Build the app
+yarn build
+
+# Preview the production build
+yarn start
 ```
-## [Unreleased]
 
-## Added
+## Coding Standards
 
-- ✨(frontend) add AI to the project #321
+### Frontend
+
+- Use TypeScript for all new code
+- Follow the existing code style (enforced by ESLint and Prettier)
+- Write meaningful commit messages following [Conventional Commits](https://www.conventionalcommits.org/)
+- Add tests for new features
+- Keep components small and focused
+- Use styled-components for styling
+
+### Commit Messages
+
+We use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages:
+
+```
+feat: add new feature
+fix: fix bug
+docs: update documentation
+style: format code
+refactor: refactor code
+test: add tests
+chore: update dependencies
 ```
 
-## Pull Requests
+## Testing
 
-It is nice to add information about the purpose of the pull request to help reviewers understand the context and intent of the changes. If you can, add some pictures or a small video to show the changes.
+```bash
+cd src/frontend/apps/impress
+yarn test
+```
 
-### Don't forget to: 
-- signoff your commits
-- sign your commits with your key (SSH, GPG etc.)
-- check your commits (see warnings above)
-- check the linting: `make lint && make frontend-lint`
-- check the tests: `make test`
-- add a changelog entry
+## Submitting Changes
 
-Once all the required tests have passed, you can request a review from the project maintainers.
+1. Ensure all tests pass
+2. Update documentation if needed
+3. Push your changes to your fork
+4. Create a Pull Request to the main repository
+5. Wait for review and address any feedback
 
-## Code Style
+### Pull Request Guidelines
 
-Please maintain consistency in code style. Run any linting tools available to make sure the code is clean and follows the project's conventions.
+- Provide a clear description of the changes
+- Reference any related issues
+- Include screenshots for UI changes
+- Keep PRs focused on a single feature or fix
+- Update the version number in package.json and .env.development if needed
 
-## Tests
+## Reporting Bugs
 
-Make sure that all new features or fixes have corresponding tests. Run the test suite before pushing your changes to ensure that nothing is broken.
+When reporting bugs, please include:
 
-## Asking for Help
+- A clear description of the issue
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Screenshots if applicable
+- Browser/OS information
+- Any error messages
 
-If you need any help while contributing, feel free to open a discussion or ask for guidance in the issue tracker. We are more than happy to assist!
+## Feature Requests
 
-Thank you for your contributions! 👍
+We welcome feature requests! Please:
 
-## Contribute to BlockNote
-We use [BlockNote](https://www.blocknotejs.org/) for the text editing features of Docs. 
-If you find and issue with the editor you can [report it](https://github.com/TypeCellOS/BlockNote/issues) directly on their repository.
+- Check if the feature has already been requested
+- Provide a clear use case
+- Explain how it would benefit users
+- Be open to discussion and feedback
 
-Please consider contributing to BlockNotejs, as a library, it's useful to many projects not just Docs.
+## Areas for Contribution
 
-The project is licended with Mozilla Public License Version 2.0 but be aware that [XL packages](https://github.com/TypeCellOS/BlockNote/blob/main/packages/xl-docx-exporter/LICENSE) are dual licenced with GNU AFFERO GENERAL PUBLIC LICENCE Version 3 and proprietary licence if you are [sponsor](https://www.blocknotejs.org/pricing).
+Here are some areas where contributions are especially welcome:
+
+### Database Features
+- Board view (Kanban)
+- List view
+- Calendar view
+- Gallery view
+- Customizable select options
+- Relations between databases
+- Formulas and calculations
+
+### UI/UX Improvements
+- Dark mode
+- Keyboard shortcuts
+- Accessibility improvements
+- Mobile responsiveness
+
+### Core Features
+- Templates system
+- Import/Export (CSV, JSON)
+- Search improvements
+- Offline support enhancements
+
+### Documentation
+- Tutorials
+- Video guides
+- API documentation
+- Translation to other languages
+
+## Questions?
+
+If you have questions, feel free to:
+
+- Open an issue on [GitHub](https://github.com/Eric-Hei/known/issues)
+- Check existing issues and discussions
+
+## Credits
+
+Known is based on [La Suite Docs](https://github.com/suitenumerique/docs), an amazing collaborative text editor. We're grateful for their work and the open-source community.
+
+## License
+
+By contributing to Known, you agree that your contributions will be licensed under the MIT License.
+
