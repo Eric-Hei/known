@@ -75,3 +75,6 @@ db.sqlite3
 .vscode/
 *.iml
 .devcontainer
+
+# Local development credentials (never commit)
+LOCAL_DEV_CREDENTIALS.md

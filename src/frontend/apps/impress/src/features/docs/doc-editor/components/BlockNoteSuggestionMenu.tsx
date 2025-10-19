@@ -52,21 +52,23 @@ export const BlockNoteSuggestionMenu = () => {
       ...defaultMenu.slice(index + 1),
     ];
 
-    return async (query: string) =>
-      Promise.resolve(
-        filterSuggestionItems(
-          combineByGroup(
-            newSlashMenuItems,
-            getCalloutReactSlashMenuItems(editor, t, basicBlocksName),
-            getDatabaseReactSlashMenuItems(editor, t, basicBlocksName),
-            getMultiColumnSlashMenuItems?.(editor) || [],
-            getPageBreakReactSlashMenuItems(editor),
-            getDividerReactSlashMenuItems(editor, t, basicBlocksName),
-            getPdfReactSlashMenuItems(editor, t, fileBlocksName),
-          ),
-          query,
-        ),
+    return async (query: string) => {
+      // Combine all menu items
+      const allItems = combineByGroup(
+        newSlashMenuItems,
+        getCalloutReactSlashMenuItems(editor, t, basicBlocksName),
+        getDatabaseReactSlashMenuItems(editor, t, basicBlocksName),
+        getMultiColumnSlashMenuItems?.(editor) || [],
+        getPageBreakReactSlashMenuItems(editor),
+        getDividerReactSlashMenuItems(editor, t, basicBlocksName),
+        getPdfReactSlashMenuItems(editor, t, fileBlocksName),
       );
+
+      // Filter out items with undefined title to prevent toLowerCase errors
+      const validItems = allItems.filter((item) => item.title != null);
+
+      return Promise.resolve(filterSuggestionItems(validItems, query));
+    };
   }, [basicBlocksName, editor, getInterlinkingMenuItems, t, fileBlocksName]);
 
   return (
