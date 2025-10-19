@@ -78,3 +78,7 @@ db.sqlite3
 
 # Local development credentials (never commit)
 LOCAL_DEV_CREDENTIALS.md
+
+
+# Backend local env
+src/backend/.env
