@@ -25,7 +25,7 @@ export const Title = ({ headingLevel = 'h2' }: TitleSemanticsProps) => {
         $zIndex={1}
         $size="1.375rem"
       >
-        {t('Docs')}
+        Known
       </Text>
     </Box>
   );

@@ -63,7 +63,7 @@ export const HomeHeader = () => {
         >
           <IconDocs
             data-testid="header-icon-docs"
-            aria-label={t('Docs Logo')}
+            aria-label="Known Logo"
             width={32}
             color={colorsTokens['primary-text']}
           />

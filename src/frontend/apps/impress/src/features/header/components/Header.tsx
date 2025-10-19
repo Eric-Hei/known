@@ -68,7 +68,7 @@ export const Header = () => {
             className="c__image-system-filter"
             data-testid="header-icon-docs"
             src={logo?.src || '/assets/icon-docs.svg'}
-            alt={logo?.alt || t('Docs')}
+            alt={logo?.alt || 'Known'}
             width={0}
             height={0}
             style={{
