@@ -266,9 +266,16 @@ class DocumentSerializer(ListDocumentSerializer):
             return None
 
         try:
-            b64decode(value, validate=True)
+            decoded = b64decode(value, validate=True)
         except binascii.Error as err:
             raise serializers.ValidationError("Invalid base64 content.") from err
+
+        # Security: Limit decoded content size to 50MB
+        max_size = 50 * 1024 * 1024  # 50MB
+        if len(decoded) > max_size:
+            raise serializers.ValidationError(
+                f"Content too large. Maximum size is {max_size // (1024 * 1024)} MB."
+            )
 
         return value
 
@@ -834,10 +841,18 @@ class AITransformSerializer(serializers.Serializer):
     text = serializers.CharField(required=True)
 
     def validate_text(self, value):
-        """Ensure the text field is not empty."""
+        """Ensure the text field is not empty and within size limits."""
 
         if len(value.strip()) == 0:
             raise serializers.ValidationError("Text field cannot be empty.")
+
+        # Security: Limit text size to prevent abuse of AI API (100k characters ~ 25k tokens)
+        max_length = 100000
+        if len(value) > max_length:
+            raise serializers.ValidationError(
+                f"Text too long. Maximum length is {max_length:,} characters."
+            )
+
         return value
 
 
@@ -850,10 +865,18 @@ class AITranslateSerializer(serializers.Serializer):
     text = serializers.CharField(required=True)
 
     def validate_text(self, value):
-        """Ensure the text field is not empty."""
+        """Ensure the text field is not empty and within size limits."""
 
         if len(value.strip()) == 0:
             raise serializers.ValidationError("Text field cannot be empty.")
+
+        # Security: Limit text size to prevent abuse of AI API (100k characters ~ 25k tokens)
+        max_length = 100000
+        if len(value) > max_length:
+            raise serializers.ValidationError(
+                f"Text too long. Maximum length is {max_length:,} characters."
+            )
+
         return value
 
 

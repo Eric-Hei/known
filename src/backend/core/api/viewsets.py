@@ -1233,7 +1233,12 @@ class DocumentViewSet(
         link_trace.save(update_fields=["is_masked"])
         return drf.response.Response(status=drf.status.HTTP_204_NO_CONTENT)
 
-    @drf.decorators.action(detail=True, methods=["post"], url_path="attachment-upload")
+    @drf.decorators.action(
+        detail=True,
+        methods=["post"],
+        url_path="attachment-upload",
+        throttle_scope="attachment_upload",
+    )
     def attachment_upload(self, request, *args, **kwargs):
         """Upload a file related to a given document"""
         # Check permissions first
