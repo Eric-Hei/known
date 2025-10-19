@@ -1,0 +1,5 @@
+apiVersion: v2
+type: application
+name: docs
+version:  3.8.2
+appVersion: latest

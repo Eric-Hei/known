@@ -1,0 +1,16 @@
+[build]
+  base = "src/frontend/apps/impress"
+  command = "yarn build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NEXT_PUBLIC_PUBLISH_AS_MIT = "true"
+  NEXT_PUBLIC_APP_NAME = "Known"
+  NEXT_PUBLIC_APP_VERSION = "1.0.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
