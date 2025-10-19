@@ -17,7 +17,7 @@ export const PropertyHeader: React.FC<PropertyHeaderProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(property.name);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLTableHeaderCellElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { updateProperty, deleteProperty, addSort, deleteSort } = useDatabaseStore();

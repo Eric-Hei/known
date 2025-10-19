@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { insertOrUpdateBlock } from '@blocknote/core';
-import { BlockNoteEditor, BlockTypeSelectItem } from '@blocknote/react';
 import { createReactBlockSpec } from '@blocknote/react';
 import { TFunction } from 'i18next';
 import React from 'react';

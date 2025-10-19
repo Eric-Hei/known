@@ -29,6 +29,8 @@ export const pdfDocsSchemaMappings: DocsExporterPDF['mappings'] = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pdf: pdfDefaultSchemaMappings.blockMapping.file as any,
     uploadLoader: blockMappingUploadLoaderPDF,
+    // Custom block: database (not exported; ignored by returning empty fragment)
+    database: () => <></>,
   },
   inlineContentMapping: {
     ...pdfDefaultSchemaMappings.inlineContentMapping,

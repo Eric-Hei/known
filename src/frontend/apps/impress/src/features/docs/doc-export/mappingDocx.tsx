@@ -24,6 +24,8 @@ export const docxDocsSchemaMappings: DocsExporterDocx['mappings'] = {
     quote: blockMappingQuoteDocx,
     image: blockMappingImageDocx,
     uploadLoader: blockMappingUploadLoaderDocx,
+    // Custom block: database (not exported; ignored by returning empty paragraph)
+    database: () => new Paragraph(''),
   },
   inlineContentMapping: {
     ...docxDefaultSchemaMappings.inlineContentMapping,
