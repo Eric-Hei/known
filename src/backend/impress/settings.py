@@ -806,22 +806,22 @@ class Base(Configuration):
         ),
         "DIRECTIVES": values.DictValue(
             default={
-                "default-src": [SELF],
-                "script-src": [SELF, UNSAFE_INLINE],  # UNSAFE_INLINE needed for Next.js
-                "style-src": [SELF, UNSAFE_INLINE, "https://fonts.googleapis.com"],
-                "img-src": [SELF, "data:", "https:", "blob:"],  # Allow images from S3/CDN
-                "connect-src": [SELF, "https://api.posthog.com", "wss:"],  # WebSocket for collaboration
-                "font-src": [SELF, "data:", "https://fonts.gstatic.com"],
-                "object-src": [NONE],
-                "media-src": [SELF, "https:", "blob:"],
-                "frame-src": [NONE],
-                "child-src": [NONE],
-                "form-action": [SELF],
-                "frame-ancestors": [NONE],
-                "base-uri": [SELF],
-                "worker-src": [SELF, "blob:"],  # Service workers
-                "manifest-src": [SELF],
-                "prefetch-src": [SELF],
+                "default-src": ["'self'"],
+                "script-src": ["'self'", "'unsafe-inline'"],  # 'unsafe-inline' needed for Next.js
+                "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+                "img-src": ["'self'", "data:", "https:", "blob:"],  # Allow images from S3/CDN
+                "connect-src": ["'self'", "https://api.posthog.com", "wss:"],  # WebSocket for collaboration
+                "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+                "object-src": ["'none'"],
+                "media-src": ["'self'", "https:", "blob:"],
+                "frame-src": ["'none'"],
+                "child-src": ["'none'"],
+                "form-action": ["'self'"],
+                "frame-ancestors": ["'none'"],
+                "base-uri": ["'self'"],
+                "worker-src": ["'self'", "blob:"],  # Service workers
+                "manifest-src": ["'self'"],
+                "prefetch-src": ["'self'"],
             },
             environ_name="CONTENT_SECURITY_POLICY_DIRECTIVES",
             environ_prefix=None,

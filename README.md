@@ -37,46 +37,96 @@ Known is a local-first workspace that combines the power of Notion with the simp
 
 ### Prerequisites
 
-Make sure you have Node.js (v18+) and yarn installed:
+Make sure you have the following installed:
+- **Docker Desktop** - [Download here](https://www.docker.com/products/docker-desktop)
+- **Node.js** (v18+) and **yarn** (for local frontend development)
 
 ```bash
 node -v  # Should be v18 or higher
 yarn -v
+docker --version
 ```
 
-### Installation
+### Installation & Running the Application
 
-1. Clone the repository:
+Known uses Docker Compose to run the full stack (backend, database, authentication, collaboration server, and frontend).
+
+#### 🐳 Option 1: Run Everything with Docker (Recommended)
+
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/Eric-Hei/known.git
 cd known
 ```
 
-2. Navigate to the frontend app:
-```bash
+2. **Start Docker Desktop**
+   - Launch Docker Desktop and wait for it to be ready (green icon in system tray)
+
+3. **Start all services:**
+```powershell
+docker-compose up -d
+```
+
+4. **Verify all containers are running:**
+```powershell
+docker-compose ps
+```
+
+You should see all services in "running" state:
+- `docs-frontend-development-1` (port 3000)
+- `docs-app-dev-1` (port 8071)
+- `docs-y-provider-development-1` (port 4444)
+- `docs-keycloak-1` (port 8080)
+- `docs-postgresql-1`, `docs-redis-1`, `docs-minio-1`, etc.
+
+5. **Access the application:**
+   - **Frontend**: http://localhost:3000
+   - **Backend API**: http://localhost:8071
+   - **Keycloak (Auth)**: http://localhost:8080
+
+6. **Login credentials:**
+   - Username: `impress`
+   - Password: `impress`
+
+**To stop all services:**
+```powershell
+docker-compose down
+```
+
+**To view logs:**
+```powershell
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f app-dev
+docker-compose logs -f frontend-development
+```
+
+#### 💻 Option 2: Run Frontend Locally + Backend in Docker
+
+If you want to develop the frontend locally while keeping the backend in Docker:
+
+1. **Start only backend services:**
+```powershell
+docker-compose up -d app-dev celery-dev postgresql redis minio createbuckets mailcatcher keycloak kc_postgresql nginx y-provider-development
+```
+
+2. **Run frontend locally:**
+```powershell
 cd src/frontend/apps/impress
-```
-
-3. Install dependencies:
-```bash
 yarn install
-```
-
-4. Run the development server:
-```bash
 yarn dev
 ```
 
-5. Open your browser and go to:
-```
-http://localhost:3000
-```
+3. **Access the application:**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8071
 
-That's it! 🎉 Your personal workspace is ready to use.
-
-### Building for production
+### Building for Production
 
 ```bash
+cd src/frontend/apps/impress
 yarn build
 yarn start
 ```
@@ -87,6 +137,8 @@ Deploy to Netlify:
 ```bash
 netlify deploy --prod --dir=out --site=known
 ```
+
+For Railway deployment, see [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md).
 
 ## Tech Stack 🛠️
 
