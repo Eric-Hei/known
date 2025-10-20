@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Database, PropertyType } from '../../types';
-import { useDatabaseStore } from '../../stores/useDatabaseStore';
+import { useCreateRow, useUpdateRow, useDeleteRow } from '../../api';
 import { applyFiltersAndSorts } from '../../utils/filterSort';
 import { PropertyEditor } from '../PropertyEditor';
 
@@ -11,7 +11,9 @@ interface GalleryViewProps {
 }
 
 export const GalleryView: React.FC<GalleryViewProps> = ({ database, viewId }) => {
-  const { addRow, deleteRow, updateRow } = useDatabaseStore();
+  const { mutate: createRow } = useCreateRow();
+  const { mutate: updateRow } = useUpdateRow();
+  const { mutate: deleteRow } = useDeleteRow();
   const [cardSize, setCardSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [editingCard, setEditingCard] = useState<string | null>(null);
 
@@ -22,13 +24,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ database, viewId }) =>
   const filteredRows = applyFiltersAndSorts(database.rows, view.filters, view.sorts, database.properties);
 
   const handleAddCard = () => {
-    addRow(database.id);
+    createRow({
+      databaseId: database.id,
+      properties: {},
+    });
   };
 
   const handleDeleteCard = (rowId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this card?')) {
-      deleteRow(database.id, rowId);
+      deleteRow({ databaseId: database.id, rowId });
       setEditingCard(null);
     }
   };
@@ -37,9 +42,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ database, viewId }) =>
     const row = database.rows.find((r) => r.id === rowId);
     if (!row) return;
 
-    updateRow(database.id, rowId, {
-      ...row.properties,
-      [propertyId]: value,
+    updateRow({
+      databaseId: database.id,
+      rowId,
+      properties: {
+        ...row.properties,
+        [propertyId]: value,
+      },
     });
   };
 

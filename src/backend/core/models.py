@@ -1514,3 +1514,282 @@ class Invitation(BaseModel):
             "partial_update": is_admin_or_owner,
             "retrieve": is_admin_or_owner,
         }
+
+
+# Database Models
+
+
+class DatabaseModel(BaseModel):
+    """
+    Database model representing a Notion-like database.
+
+    A database contains properties (columns), rows (records), and views (different ways to display data).
+    Databases can be shared with users and teams through DatabaseAccess.
+    """
+
+    title = models.CharField(
+        _("title"),
+        max_length=255,
+        help_text=_("Title of the database"),
+    )
+    description = models.TextField(
+        _("description"),
+        blank=True,
+        null=True,
+        help_text=_("Optional description of the database"),
+    )
+    icon = models.CharField(
+        _("icon"),
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text=_("Optional emoji or icon for the database"),
+    )
+    cover = models.CharField(
+        _("cover"),
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text=_("Optional cover image URL"),
+    )
+    creator = models.ForeignKey(
+        User,
+        on_delete=models.RESTRICT,
+        related_name="databases_created",
+        help_text=_("User who created the database"),
+    )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Soft delete timestamp"),
+    )
+
+    class Meta:
+        db_table = "impress_database"
+        ordering = ("-created_at",)
+        verbose_name = _("Database")
+        verbose_name_plural = _("Databases")
+
+    def __str__(self):
+        return str(self.title) if self.title else str(_("Untitled Database"))
+
+    def get_abilities(self, user):
+        """Compute and return abilities for a given user on this database."""
+        if not user.is_authenticated:
+            return {
+                "destroy": False,
+                "manage_accesses": False,
+                "partial_update": False,
+                "retrieve": False,
+                "update": False,
+            }
+
+        try:
+            role = self.accesses.filter(
+                models.Q(user=user) | models.Q(team__in=user.teams)
+            ).values_list("role", flat=True).first()
+        except (self._meta.model.DoesNotExist, IndexError):
+            role = None
+
+        is_owner_or_admin = role in [RoleChoices.OWNER, RoleChoices.ADMIN]
+        is_editor_or_above = role in [
+            RoleChoices.OWNER,
+            RoleChoices.ADMIN,
+            RoleChoices.EDITOR,
+        ]
+
+        return {
+            "destroy": is_owner_or_admin,
+            "manage_accesses": is_owner_or_admin,
+            "partial_update": is_editor_or_above,
+            "retrieve": role is not None,
+            "update": is_editor_or_above,
+        }
+
+
+class DatabaseAccess(BaseAccess):
+    """
+    Access control for databases.
+
+    Defines who can access a database and with what role (owner, admin, editor, reader).
+    """
+
+    database = models.ForeignKey(
+        DatabaseModel,
+        on_delete=models.CASCADE,
+        related_name="accesses",
+    )
+
+    class Meta:
+        db_table = "impress_database_access"
+        ordering = ("-created_at",)
+        verbose_name = _("Database access")
+        verbose_name_plural = _("Database accesses")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "database"],
+                name="user_database_unique_together",
+                condition=models.Q(user__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=["team", "database"],
+                name="team_database_unique_together",
+                condition=models.Q(team__isnull=False, team__gt=""),
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(user__isnull=False, team="")
+                    | models.Q(user__isnull=True, team__isnull=False)
+                    & ~models.Q(team="")
+                ),
+                name="check_either_user_or_team_database",
+            ),
+        ]
+
+    def __str__(self):
+        if self.user:
+            return f"{self.user.email} has {self.role} access to {self.database.title}"
+        return f"Team {self.team} has {self.role} access to {self.database.title}"
+
+
+class DatabaseProperty(BaseModel):
+    """
+    Property (column) definition for a database.
+
+    Defines the schema of a database column including its name, type, and configuration.
+    """
+
+    database = models.ForeignKey(
+        DatabaseModel,
+        on_delete=models.CASCADE,
+        related_name="properties",
+    )
+    name = models.CharField(
+        _("name"),
+        max_length=255,
+        help_text=_("Name of the property"),
+    )
+    property_type = models.CharField(
+        _("type"),
+        max_length=50,
+        help_text=_("Type of the property (text, number, select, etc.)"),
+    )
+    config = models.JSONField(
+        _("configuration"),
+        default=dict,
+        blank=True,
+        help_text=_("Additional configuration (e.g., select options, date format)"),
+    )
+    order = models.IntegerField(
+        _("order"),
+        default=0,
+        help_text=_("Display order of the property"),
+    )
+
+    class Meta:
+        db_table = "impress_database_property"
+        ordering = ("order", "created_at")
+        verbose_name = _("Database property")
+        verbose_name_plural = _("Database properties")
+
+    def __str__(self):
+        return f"{self.name} ({self.property_type}) in {self.database.title}"
+
+
+class DatabaseView(BaseModel):
+    """
+    View configuration for a database.
+
+    Defines how data is displayed (table, board, list, calendar, gallery)
+    and includes filters, sorts, and view-specific settings.
+    """
+
+    database = models.ForeignKey(
+        DatabaseModel,
+        on_delete=models.CASCADE,
+        related_name="views",
+    )
+    name = models.CharField(
+        _("name"),
+        max_length=255,
+        help_text=_("Name of the view"),
+    )
+    view_type = models.CharField(
+        _("type"),
+        max_length=50,
+        help_text=_("Type of view (table, board, list, calendar, gallery)"),
+    )
+    filters = models.JSONField(
+        _("filters"),
+        default=list,
+        blank=True,
+        help_text=_("Array of filter configurations"),
+    )
+    sorts = models.JSONField(
+        _("sorts"),
+        default=list,
+        blank=True,
+        help_text=_("Array of sort configurations"),
+    )
+    config = models.JSONField(
+        _("configuration"),
+        default=dict,
+        blank=True,
+        help_text=_("View-specific configuration (visible properties, group by, etc.)"),
+    )
+    order = models.IntegerField(
+        _("order"),
+        default=0,
+        help_text=_("Display order of the view"),
+    )
+
+    class Meta:
+        db_table = "impress_database_view"
+        ordering = ("order", "created_at")
+        verbose_name = _("Database view")
+        verbose_name_plural = _("Database views")
+
+    def __str__(self):
+        return f"{self.name} ({self.view_type}) in {self.database.title}"
+
+
+class DatabaseRow(BaseModel):
+    """
+    Row (record) in a database.
+
+    Contains the actual data for a database record.
+    Properties are stored as JSON with property_id as key.
+    """
+
+    database = models.ForeignKey(
+        DatabaseModel,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    properties = models.JSONField(
+        _("properties"),
+        default=dict,
+        blank=True,
+        help_text=_("Property values as JSON (property_id -> value)"),
+    )
+    page_id = models.UUIDField(
+        _("page ID"),
+        null=True,
+        blank=True,
+        help_text=_("Optional link to a document page"),
+    )
+    order = models.IntegerField(
+        _("order"),
+        default=0,
+        help_text=_("Display order of the row"),
+    )
+
+    class Meta:
+        db_table = "impress_database_row"
+        ordering = ("order", "created_at")
+        verbose_name = _("Database row")
+        verbose_name_plural = _("Database rows")
+
+    def __str__(self):
+        return f"Row {self.id} in {self.database.title}"
+

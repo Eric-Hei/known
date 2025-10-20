@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import { Database, DatabaseRow, PropertyConfig, PropertyType } from '../../types';
-import { useDatabaseStore } from '../../stores/useDatabaseStore';
+import { useCreateRow, useUpdateRow, useDeleteRow } from '../../api';
 import { applyFiltersAndSorts } from '../../utils/filterSort';
 import { PropertyCell } from '../cells/PropertyCell';
 import { PropertyHeader } from '../headers/PropertyHeader';
@@ -12,7 +12,9 @@ interface TableViewProps {
 }
 
 export const TableView: React.FC<TableViewProps> = ({ database, viewId }) => {
-  const { updateRow, deleteRow, addRow } = useDatabaseStore();
+  const { mutate: createRow } = useCreateRow();
+  const { mutate: updateRow } = useUpdateRow();
+  const { mutate: deleteRow } = useDeleteRow();
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   const view = database.views.find((v) => v.id === viewId);
@@ -32,11 +34,22 @@ export const TableView: React.FC<TableViewProps> = ({ database, viewId }) => {
   }, [database.rows, view.filters, view.sorts, database.properties]);
 
   const handleCellChange = (rowId: string, propertyId: string, value: any) => {
-    updateRow(database.id, rowId, { [propertyId]: value });
+    // Find the current row to merge properties
+    const currentRow = database.rows.find((r) => r.id === rowId);
+    const currentProperties = currentRow?.properties || {};
+
+    updateRow({
+      databaseId: database.id,
+      rowId,
+      properties: {
+        ...currentProperties,
+        [propertyId]: value,
+      },
+    });
   };
 
   const handleDeleteRow = (rowId: string) => {
-    deleteRow(database.id, rowId);
+    deleteRow({ databaseId: database.id, rowId });
     setSelectedRows((prev) => {
       const next = new Set(prev);
       next.delete(rowId);
@@ -45,7 +58,10 @@ export const TableView: React.FC<TableViewProps> = ({ database, viewId }) => {
   };
 
   const handleAddRow = () => {
-    addRow(database.id);
+    createRow({
+      databaseId: database.id,
+      properties: {},
+    });
   };
 
   const toggleRowSelection = (rowId: string) => {

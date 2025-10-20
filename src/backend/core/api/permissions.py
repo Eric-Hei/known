@@ -144,6 +144,66 @@ class DocumentPermission(permissions.BasePermission):
         return has_permission
 
 
+class DatabasePermission(permissions.BasePermission):
+    """Permission class for databases."""
+
+    def has_permission(self, request, view):
+        """Check create permission for databases."""
+        return request.user.is_authenticated or view.action != "create"
+
+    def has_object_permission(self, request, view, obj):
+        """Check permission for a given database object."""
+        abilities = obj.get_abilities(request.user)
+        action = view.action
+        return abilities.get(action, False)
+
+
+class DatabaseNestedPermission(permissions.BasePermission):
+    """Permission class for nested database objects (rows, properties, views, accesses)."""
+
+    def has_permission(self, request, view):
+        """Check permission based on the parent database."""
+        if not request.user.is_authenticated:
+            return False
+
+        # Get the database from the URL kwargs
+        database_id = view.kwargs.get("database_id")
+        if not database_id:
+            return False
+
+        try:
+            from core import models
+            database = models.DatabaseModel.objects.get(id=database_id)
+            abilities = database.get_abilities(request.user)
+
+            # For create actions, check if user can update the database
+            if view.action == "create":
+                return abilities.get("update", False)
+
+            # For list actions, check if user can retrieve the database
+            return abilities.get("retrieve", False)
+        except models.DatabaseModel.DoesNotExist:
+            return False
+
+    def has_object_permission(self, request, view, obj):
+        """Check permission based on the parent database."""
+        # Get the database from the object
+        database = obj.database if hasattr(obj, "database") else None
+        if not database:
+            return False
+
+        abilities = database.get_abilities(request.user)
+        action = view.action
+
+        # Map actions to database abilities
+        if action in ["update", "partial_update", "destroy"]:
+            return abilities.get("update", False)
+        elif action == "retrieve":
+            return abilities.get("retrieve", False)
+
+        return False
+
+
 class ResourceAccessPermission(IsAuthenticated):
     """Permission class for document access objects."""
 

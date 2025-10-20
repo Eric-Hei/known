@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Database, PropertyType } from '../../types';
-import { useDatabaseStore } from '../../stores/useDatabaseStore';
+import { useCreateRow, useUpdateRow, useDeleteRow } from '../../api';
 import { applyFiltersAndSorts } from '../../utils/filterSort';
 import { PropertyEditor } from '../PropertyEditor';
 
@@ -11,7 +11,9 @@ interface CalendarViewProps {
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ database, viewId }) => {
-  const { addRow, deleteRow, updateRow } = useDatabaseStore();
+  const { mutate: createRow } = useCreateRow();
+  const { mutate: updateRow } = useUpdateRow();
+  const { mutate: deleteRow } = useDeleteRow();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDateProperty, setSelectedDateProperty] = useState<string>('');
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
@@ -94,15 +96,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ database, viewId }) 
   };
 
   const handleAddEvent = (date: Date) => {
-    const newRow = addRow(database.id, {
-      [dateProperty.id]: date.toISOString(),
+    createRow({
+      databaseId: database.id,
+      properties: {
+        [dateProperty.id]: date.toISOString(),
+      },
     });
   };
 
   const handleDeleteEvent = (rowId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this event?')) {
-      deleteRow(database.id, rowId);
+      deleteRow({ databaseId: database.id, rowId });
       setEditingEvent(null);
     }
   };
@@ -111,9 +116,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ database, viewId }) 
     const row = database.rows.find((r) => r.id === rowId);
     if (!row) return;
 
-    updateRow(database.id, rowId, {
-      ...row.properties,
-      [propertyId]: value,
+    updateRow({
+      databaseId: database.id,
+      rowId,
+      properties: {
+        ...row.properties,
+        [propertyId]: value,
+      },
     });
   };
 

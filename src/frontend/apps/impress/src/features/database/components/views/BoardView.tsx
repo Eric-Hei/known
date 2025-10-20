@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Database, PropertyType, SelectOption } from '../../types';
-import { useDatabaseStore } from '../../stores/useDatabaseStore';
+import { useCreateRow, useUpdateRow, useDeleteRow } from '../../api';
 import { applyFiltersAndSorts } from '../../utils/filterSort';
 import { PropertyEditor } from '../PropertyEditor';
 
@@ -11,7 +11,9 @@ interface BoardViewProps {
 }
 
 export const BoardView: React.FC<BoardViewProps> = ({ database, viewId }) => {
-  const { updateRow, addRow, deleteRow } = useDatabaseStore();
+  const { mutate: createRow } = useCreateRow();
+  const { mutate: updateRow } = useUpdateRow();
+  const { mutate: deleteRow } = useDeleteRow();
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
   const [selectedGroupBy, setSelectedGroupBy] = useState<string>('');
   const [editingCard, setEditingCard] = useState<string | null>(null);
@@ -94,9 +96,13 @@ export const BoardView: React.FC<BoardViewProps> = ({ database, viewId }) => {
 
     // Update the row's property value
     const newValue = optionId === '__no_status__' ? null : optionId;
-    updateRow(database.id, draggedRowId, {
-      ...row.properties,
-      [groupByProperty.id]: newValue,
+    updateRow({
+      databaseId: database.id,
+      rowId: draggedRowId,
+      properties: {
+        ...row.properties,
+        [groupByProperty.id]: newValue,
+      },
     });
 
     setDraggedRowId(null);
@@ -104,8 +110,11 @@ export const BoardView: React.FC<BoardViewProps> = ({ database, viewId }) => {
 
   const handleAddCard = (optionId: string) => {
     const newValue = optionId === '__no_status__' ? null : optionId;
-    const newRow = addRow(database.id, {
-      [groupByProperty.id]: newValue,
+    createRow({
+      databaseId: database.id,
+      properties: {
+        [groupByProperty.id]: newValue,
+      },
     });
   };
 
@@ -116,7 +125,7 @@ export const BoardView: React.FC<BoardViewProps> = ({ database, viewId }) => {
   const handleDeleteCard = (rowId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this card?')) {
-      deleteRow(database.id, rowId);
+      deleteRow({ databaseId: database.id, rowId });
     }
   };
 
@@ -124,9 +133,13 @@ export const BoardView: React.FC<BoardViewProps> = ({ database, viewId }) => {
     const row = database.rows.find((r) => r.id === rowId);
     if (!row) return;
 
-    updateRow(database.id, rowId, {
-      ...row.properties,
-      [propertyId]: value,
+    updateRow({
+      databaseId: database.id,
+      rowId,
+      properties: {
+        ...row.properties,
+        [propertyId]: value,
+      },
     });
   };
 

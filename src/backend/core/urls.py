@@ -12,6 +12,7 @@ from core.api import viewsets
 router = DefaultRouter()
 router.register("templates", viewsets.TemplateViewSet, basename="templates")
 router.register("documents", viewsets.DocumentViewSet, basename="documents")
+router.register("databases", viewsets.DatabaseViewSet, basename="databases")
 router.register("users", viewsets.UserViewSet, basename="users")
 
 # - Routes nested under a document
@@ -43,6 +44,30 @@ template_related_router.register(
 )
 
 
+# - Routes nested under a database
+database_related_router = DefaultRouter()
+database_related_router.register(
+    "properties",
+    viewsets.DatabasePropertyViewSet,
+    basename="database_properties",
+)
+database_related_router.register(
+    "views",
+    viewsets.DatabaseViewViewSet,
+    basename="database_views",
+)
+database_related_router.register(
+    "rows",
+    viewsets.DatabaseRowViewSet,
+    basename="database_rows",
+)
+database_related_router.register(
+    "accesses",
+    viewsets.DatabaseAccessViewSet,
+    basename="database_accesses",
+)
+
+
 urlpatterns = [
     path(
         f"api/{settings.API_VERSION}/",
@@ -57,6 +82,10 @@ urlpatterns = [
                 re_path(
                     r"^templates/(?P<resource_id>[0-9a-z-]*)/",
                     include(template_related_router.urls),
+                ),
+                re_path(
+                    r"^databases/(?P<database_id>[0-9a-z-]*)/",
+                    include(database_related_router.urls),
                 ),
             ]
         ),

@@ -77,7 +77,8 @@ class NestedGenericViewSet(viewsets.GenericViewSet):
         to keep compatibility with all methods used by the parent class `GenericViewSet`.
         """
         if item in ["lookup_field", "lookup_url_kwarg"]:
-            return getattr(self, item + "s", [None])[-1]
+            items = getattr(self, item + "s", [None])
+            return items[-1] if items else None
 
         return super().__getattribute__(item)
 
@@ -2238,3 +2239,181 @@ class ConfigView(drf.views.APIView):
             )
 
         return theme_customization
+
+
+# Database ViewSets
+
+
+class DatabaseViewSet(
+    viewsets.ModelViewSet,
+):
+    """
+    API endpoints for databases.
+
+    Provides CRUD operations for databases with access control.
+    """
+
+    permission_classes = [permissions.DatabasePermission]
+    serializer_class = serializers.DatabaseSerializer
+
+    def get_queryset(self):
+        """Return databases accessible by the current user."""
+        user = self.request.user
+
+        # Get databases where user has access (directly or through team)
+        queryset = models.DatabaseModel.objects.filter(
+            db.Q(accesses__user=user) | db.Q(accesses__team__in=user.teams),
+            deleted_at__isnull=True,
+        ).distinct()
+
+        # For list view, add counts
+        if self.action == "list":
+            queryset = queryset.annotate(
+                nb_properties=db.Count("properties", distinct=True),
+                nb_rows=db.Count("rows", distinct=True),
+                nb_views=db.Count("views", distinct=True),
+            )
+            return queryset.select_related("creator")
+
+        # For detail view, prefetch related objects
+        return queryset.prefetch_related(
+            "properties",
+            "views",
+            "rows",
+            "accesses__user",
+            "creator",
+        )
+
+    def get_serializer_class(self):
+        """Use different serializers for list and detail views."""
+        if self.action == "list":
+            return serializers.ListDatabaseSerializer
+        return serializers.DatabaseSerializer
+
+    def perform_create(self, serializer):
+        """Create a database and automatically grant owner access to the creator."""
+        database = serializer.save()
+
+        # Grant owner access to the creator
+        models.DatabaseAccess.objects.create(
+            database=database,
+            user=self.request.user,
+            role=choices.RoleChoices.OWNER,
+        )
+
+        # Create a default "All" view
+        models.DatabaseView.objects.create(
+            database=database,
+            name="All",
+            view_type="table",
+            filters=[],
+            sorts=[],
+            config={
+                "visibleProperties": [],
+            },
+        )
+
+    def perform_destroy(self, instance):
+        """Soft delete the database."""
+        instance.deleted_at = db.models.functions.Now()
+        instance.save()
+
+
+class DatabasePropertyViewSet(
+    NestedGenericViewSet,
+    viewsets.ModelViewSet,
+):
+    """
+    API endpoints for database properties (columns).
+
+    Nested under /databases/{database_id}/properties/
+    """
+
+    permission_classes = [permissions.DatabaseNestedPermission]
+    serializer_class = serializers.DatabasePropertySerializer
+    lookup_fields = ["database_id", "pk"]
+
+    def get_queryset(self):
+        """Return properties for the database."""
+        database_id = self.kwargs.get("database_id")
+        return models.DatabaseProperty.objects.filter(database_id=database_id)
+
+    def perform_create(self, serializer):
+        """Create a property for the database."""
+        database_id = self.kwargs.get("database_id")
+        serializer.save(database_id=database_id)
+
+
+class DatabaseViewViewSet(
+    NestedGenericViewSet,
+    viewsets.ModelViewSet,
+):
+    """
+    API endpoints for database views.
+
+    Nested under /databases/{database_id}/views/
+    """
+
+    permission_classes = [permissions.DatabaseNestedPermission]
+    serializer_class = serializers.DatabaseViewSerializer
+    lookup_fields = ["database_id", "pk"]
+
+    def get_queryset(self):
+        """Return views for the database."""
+        database_id = self.kwargs.get("database_id")
+        return models.DatabaseView.objects.filter(database_id=database_id)
+
+    def perform_create(self, serializer):
+        """Create a view for the database."""
+        database_id = self.kwargs.get("database_id")
+        serializer.save(database_id=database_id)
+
+
+class DatabaseRowViewSet(
+    NestedGenericViewSet,
+    viewsets.ModelViewSet,
+):
+    """
+    API endpoints for database rows (records).
+
+    Nested under /databases/{database_id}/rows/
+    """
+
+    permission_classes = [permissions.DatabaseNestedPermission]
+    serializer_class = serializers.DatabaseRowSerializer
+    lookup_fields = ["database_id", "pk"]
+
+    def get_queryset(self):
+        """Return rows for the database."""
+        database_id = self.kwargs.get("database_id")
+        return models.DatabaseRow.objects.filter(database_id=database_id)
+
+    def perform_create(self, serializer):
+        """Create a row for the database."""
+        database_id = self.kwargs.get("database_id")
+        serializer.save(database_id=database_id)
+
+
+class DatabaseAccessViewSet(
+    NestedGenericViewSet,
+    viewsets.ModelViewSet,
+):
+    """
+    API endpoints for database accesses (sharing).
+
+    Nested under /databases/{database_id}/accesses/
+    """
+
+    permission_classes = [permissions.DatabaseNestedPermission]
+    serializer_class = serializers.DatabaseAccessSerializer
+    lookup_fields = ["database_id", "pk"]
+
+    def get_queryset(self):
+        """Return accesses for the database."""
+        database_id = self.kwargs.get("database_id")
+        return models.DatabaseAccess.objects.filter(database_id=database_id).select_related("user", "database")
+
+    def perform_create(self, serializer):
+        """Create an access for the database."""
+        database_id = self.kwargs.get("database_id")
+        serializer.save(database_id=database_id)

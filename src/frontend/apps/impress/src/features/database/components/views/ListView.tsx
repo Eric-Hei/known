@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Database, PropertyType } from '../../types';
-import { useDatabaseStore } from '../../stores/useDatabaseStore';
+import { useCreateRow, useUpdateRow, useDeleteRow } from '../../api';
 import { applyFiltersAndSorts } from '../../utils/filterSort';
 import { PropertyEditor } from '../PropertyEditor';
 
@@ -11,7 +11,9 @@ interface ListViewProps {
 }
 
 export const ListView: React.FC<ListViewProps> = ({ database, viewId }) => {
-  const { updateRow, deleteRow, addRow } = useDatabaseStore();
+  const { mutate: createRow } = useCreateRow();
+  const { mutate: updateRow } = useUpdateRow();
+  const { mutate: deleteRow } = useDeleteRow();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const view = database.views.find((v) => v.id === viewId);
@@ -31,12 +33,15 @@ export const ListView: React.FC<ListViewProps> = ({ database, viewId }) => {
   };
 
   const handleAddRow = () => {
-    addRow(database.id);
+    createRow({
+      databaseId: database.id,
+      properties: {},
+    });
   };
 
   const handleDeleteRow = (rowId: string) => {
     if (confirm('Delete this row?')) {
-      deleteRow(database.id, rowId);
+      deleteRow({ databaseId: database.id, rowId });
     }
   };
 
@@ -44,9 +49,13 @@ export const ListView: React.FC<ListViewProps> = ({ database, viewId }) => {
     const row = database.rows.find((r) => r.id === rowId);
     if (!row) return;
 
-    updateRow(database.id, rowId, {
-      ...row.properties,
-      [propertyId]: value,
+    updateRow({
+      databaseId: database.id,
+      rowId,
+      properties: {
+        ...row.properties,
+        [propertyId]: value,
+      },
     });
   };
 

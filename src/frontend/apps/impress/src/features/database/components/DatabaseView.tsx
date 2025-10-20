@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Database, ViewType, PropertyType } from '../types';
-import { useDatabaseStore } from '../stores/useDatabaseStore';
+import { useDatabase, useUpdateDatabase, useCreateView, useDeleteView, useCreateProperty } from '../api';
+import { useDatabaseLocalStore } from '../stores/useDatabaseLocalStore';
 import { TableView } from './views/TableView';
 import { BoardView } from './views/BoardView';
 import { ListView } from './views/ListView';
@@ -15,44 +16,71 @@ interface DatabaseViewProps {
 }
 
 export const DatabaseView: React.FC<DatabaseViewProps> = ({ databaseId }) => {
-  const database = useDatabaseStore((state) => state.databases[databaseId]);
-  const { updateDatabase, addView, deleteView, addProperty, setActiveView } = useDatabaseStore();
+  // All hooks must be called before any conditional returns
+  const { data: database, isLoading, error } = useDatabase(databaseId);
+  const { mutate: updateDatabase } = useUpdateDatabase();
+  const { mutate: createView } = useCreateView();
+  const { mutate: deleteView } = useDeleteView();
+  const { mutate: createProperty } = useCreateProperty();
+  const { activeViewIds, setActiveView } = useDatabaseLocalStore();
+
   const [showAddProperty, setShowAddProperty] = useState(false);
   const [newPropertyName, setNewPropertyName] = useState('');
   const [newPropertyType, setNewPropertyType] = useState<PropertyType>(PropertyType.TEXT);
+  const [showAddViewModal, setShowAddViewModal] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
+  const [newViewType, setNewViewType] = useState<ViewType>(ViewType.TABLE);
+  const [localTitle, setLocalTitle] = useState(database?.title || '');
+
+  // Sync localTitle when database.title changes
+  useEffect(() => {
+    if (database?.title) {
+      setLocalTitle(database.title);
+    }
+  }, [database?.title]);
+
+  // Now we can do conditional returns
+  if (isLoading) {
+    return <LoadingMessage>Loading database...</LoadingMessage>;
+  }
+
+  if (error) {
+    return <ErrorMessage>Error loading database: {error.message}</ErrorMessage>;
+  }
 
   if (!database) {
     return <ErrorMessage>Database not found</ErrorMessage>;
   }
 
-  const activeView = database.views.find((v) => v.id === database.activeViewId);
+  // Get active view from local store or use first view
+  const activeViewId = activeViewIds[databaseId] || database.views[0]?.id;
+  const activeView = database.views.find((v) => v.id === activeViewId) || database.views[0];
 
   const handleAddProperty = () => {
     if (newPropertyName.trim()) {
-      const propertyConfig: any = {
-        name: newPropertyName.trim(),
-        type: newPropertyType,
-      };
+      const config: any = {};
 
       // Add default options for SELECT types
       if (newPropertyType === PropertyType.SELECT || newPropertyType === PropertyType.MULTI_SELECT) {
-        propertyConfig.options = [
+        config.options = [
           { id: crypto.randomUUID(), value: 'Option 1', color: SELECT_COLORS[0] },
           { id: crypto.randomUUID(), value: 'Option 2', color: SELECT_COLORS[1] },
           { id: crypto.randomUUID(), value: 'Option 3', color: SELECT_COLORS[2] },
         ];
       }
 
-      addProperty(databaseId, propertyConfig);
+      createProperty({
+        databaseId,
+        name: newPropertyName.trim(),
+        property_type: newPropertyType,
+        config,
+      });
+
       setNewPropertyName('');
       setNewPropertyType(PropertyType.TEXT);
       setShowAddProperty(false);
     }
   };
-
-  const [showAddViewModal, setShowAddViewModal] = useState(false);
-  const [newViewName, setNewViewName] = useState('');
-  const [newViewType, setNewViewType] = useState<ViewType>(ViewType.TABLE);
 
   const handleAddView = () => {
     setShowAddViewModal(true);
@@ -60,12 +88,15 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ databaseId }) => {
 
   const handleCreateView = () => {
     if (newViewName.trim()) {
-      addView(databaseId, {
+      createView({
+        databaseId,
         name: newViewName.trim(),
-        type: newViewType,
+        view_type: newViewType,
         filters: [],
         sorts: [],
-        visibleProperties: [],
+        config: {
+          visibleProperties: [],
+        },
       });
       setNewViewName('');
       setNewViewType(ViewType.TABLE);
@@ -86,12 +117,18 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ databaseId }) => {
     }
 
     if (confirm('Delete this view? This action cannot be undone.')) {
-      deleteView(databaseId, viewId);
+      deleteView({ databaseId, viewId });
     }
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateDatabase(databaseId, { title: e.target.value });
+    setLocalTitle(e.target.value);
+  };
+
+  const handleTitleBlur = () => {
+    if (localTitle !== database.title) {
+      updateDatabase({ id: databaseId, title: localTitle });
+    }
   };
 
   const renderView = () => {
@@ -117,8 +154,9 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ databaseId }) => {
     <Container>
       <Header>
         <TitleInput
-          value={database.title}
+          value={localTitle}
           onChange={handleTitleChange}
+          onBlur={handleTitleBlur}
           placeholder="Untitled Database"
         />
       </Header>
@@ -128,7 +166,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ databaseId }) => {
           {database.views.map((view) => (
             <ViewTab
               key={view.id}
-              $active={view.id === database.activeViewId}
+              $active={view.id === activeViewId}
               onClick={() => setActiveView(databaseId, view.id)}
             >
               <ViewTabName>{view.name}</ViewTabName>
@@ -624,3 +662,9 @@ const ViewTypeDesc = styled.div`
   color: #787774;
 `;
 
+const LoadingMessage = styled.div`
+  padding: 48px;
+  text-align: center;
+  color: #787774;
+  font-size: 16px;
+`;

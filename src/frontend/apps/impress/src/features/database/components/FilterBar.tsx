@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { Database, Filter, FilterOperator, PropertyType } from '../types';
-import { useDatabaseStore } from '../stores/useDatabaseStore';
+import { useUpdateView } from '../api';
 import { getAvailableOperators } from '../utils/filterSort';
 
 interface FilterBarProps {
@@ -27,7 +27,7 @@ const OPERATOR_LABELS: Record<FilterOperator, string> = {
 };
 
 export const FilterBar: React.FC<FilterBarProps> = ({ database, viewId }) => {
-  const { addFilter, updateFilter, deleteFilter } = useDatabaseStore();
+  const { mutate: updateView } = useUpdateView();
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [editingFilter, setEditingFilter] = useState<Filter | null>(null);
   const [isCreatingFilter, setIsCreatingFilter] = useState(false);
@@ -61,7 +61,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({ database, viewId }) => {
   };
 
   const handleCreateFilter = (filter: Omit<Filter, 'id'>) => {
-    addFilter(database.id, viewId, filter);
+    const newFilter = { ...filter, id: crypto.randomUUID() };
+    updateView({
+      databaseId: database.id,
+      viewId,
+      filters: [...activeFilters, newFilter],
+    });
     setIsCreatingFilter(false);
   };
 
@@ -70,12 +75,20 @@ export const FilterBar: React.FC<FilterBarProps> = ({ database, viewId }) => {
   };
 
   const handleDeleteFilter = (filterId: string) => {
-    deleteFilter(database.id, viewId, filterId);
+    updateView({
+      databaseId: database.id,
+      viewId,
+      filters: activeFilters.filter((f) => f.id !== filterId),
+    });
     setEditingFilter(null);
   };
 
   const handleUpdateFilter = (filterId: string, updates: Partial<Filter>) => {
-    updateFilter(database.id, viewId, filterId, updates);
+    updateView({
+      databaseId: database.id,
+      viewId,
+      filters: activeFilters.map((f) => (f.id === filterId ? { ...f, ...updates } : f)),
+    });
   };
 
   const getPropertyName = (propertyId: string) => {

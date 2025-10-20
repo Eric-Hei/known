@@ -912,3 +912,172 @@ class MoveDocumentSerializer(serializers.Serializer):
         choices=enums.MoveNodePositionChoices.choices,
         default=enums.MoveNodePositionChoices.LAST_CHILD,
     )
+
+
+# Database Serializers
+
+
+class DatabasePropertySerializer(serializers.ModelSerializer):
+    """Serialize database properties (columns)."""
+
+    class Meta:
+        model = models.DatabaseProperty
+        fields = [
+            "id",
+            "name",
+            "property_type",
+            "config",
+            "order",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class DatabaseViewSerializer(serializers.ModelSerializer):
+    """Serialize database views."""
+
+    class Meta:
+        model = models.DatabaseView
+        fields = [
+            "id",
+            "name",
+            "view_type",
+            "filters",
+            "sorts",
+            "config",
+            "order",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class DatabaseRowSerializer(serializers.ModelSerializer):
+    """Serialize database rows (records)."""
+
+    class Meta:
+        model = models.DatabaseRow
+        fields = [
+            "id",
+            "properties",
+            "page_id",
+            "order",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class DatabaseAccessSerializer(serializers.ModelSerializer):
+    """Serialize database accesses."""
+
+    abilities = serializers.SerializerMethodField(read_only=True)
+    user_details = UserLightSerializer(source="user", read_only=True)
+
+    class Meta:
+        model = models.DatabaseAccess
+        fields = ["id", "user", "user_details", "team", "role", "abilities", "created_at"]
+        read_only_fields = ["id", "abilities", "user_details", "created_at"]
+
+    def get_abilities(self, instance) -> dict:
+        """Return abilities of the logged-in user on the instance."""
+        request = self.context.get("request")
+        if request:
+            # Database access abilities are managed at the database level
+            return instance.database.get_abilities(request.user)
+        return {}
+
+    def update(self, instance, validated_data):
+        """Make "user" field readonly but only on update."""
+        validated_data.pop("user", None)
+        return super().update(instance, validated_data)
+
+
+class DatabaseSerializer(serializers.ModelSerializer):
+    """Serialize databases with full details including properties, views, and rows."""
+
+    properties = DatabasePropertySerializer(many=True, read_only=True)
+    views = DatabaseViewSerializer(many=True, read_only=True)
+    rows = DatabaseRowSerializer(many=True, read_only=True)
+    accesses = DatabaseAccessSerializer(many=True, read_only=True)
+    abilities = serializers.SerializerMethodField(read_only=True)
+    creator = UserLightSerializer(read_only=True)
+
+    class Meta:
+        model = models.DatabaseModel
+        fields = [
+            "id",
+            "title",
+            "description",
+            "icon",
+            "cover",
+            "creator",
+            "properties",
+            "views",
+            "rows",
+            "accesses",
+            "abilities",
+            "created_at",
+            "updated_at",
+            "deleted_at",
+        ]
+        read_only_fields = ["id", "creator", "created_at", "updated_at", "deleted_at"]
+
+    def get_abilities(self, instance) -> dict:
+        """Return abilities of the logged-in user on the database."""
+        request = self.context.get("request")
+        if request:
+            return instance.get_abilities(request.user)
+        return {}
+
+    def create(self, validated_data):
+        """Set the creator to the current user."""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            validated_data["creator"] = request.user
+        return super().create(validated_data)
+
+
+class ListDatabaseSerializer(serializers.ModelSerializer):
+    """Serialize databases with limited fields for display in lists."""
+
+    abilities = serializers.SerializerMethodField(read_only=True)
+    creator = UserLightSerializer(read_only=True)
+    nb_properties = serializers.IntegerField(read_only=True)
+    nb_rows = serializers.IntegerField(read_only=True)
+    nb_views = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = models.DatabaseModel
+        fields = [
+            "id",
+            "title",
+            "description",
+            "icon",
+            "cover",
+            "creator",
+            "abilities",
+            "nb_properties",
+            "nb_rows",
+            "nb_views",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "creator",
+            "abilities",
+            "nb_properties",
+            "nb_rows",
+            "nb_views",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_abilities(self, instance) -> dict:
+        """Return abilities of the logged-in user on the database."""
+        request = self.context.get("request")
+        if request:
+            return instance.get_abilities(request.user)
+        return {}

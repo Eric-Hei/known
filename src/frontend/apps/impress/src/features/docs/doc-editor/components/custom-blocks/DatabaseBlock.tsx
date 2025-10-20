@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 import { Icon } from '@/components';
 import { DatabaseView } from '@/features/database';
-import { useDatabaseStore } from '@/features/database';
+import { useDatabases, useCreateDatabase } from '@/features/database/api';
 
 import { DocsBlockNoteEditor, DocsBlockSchema, DocsInlineContentSchema, DocsStyleSchema } from '../../types';
 
@@ -15,28 +15,41 @@ const DatabaseSelector: React.FC<{
   onSelect: (databaseId: string) => void;
   onCreateNew: () => void;
 }> = ({ onSelect, onCreateNew }) => {
-  const databases = useDatabaseStore((state) => state.databases);
-  const databaseList = Object.values(databases);
+  const { data: databases = [], isLoading } = useDatabases();
+  const databaseList = databases;
+
+  if (isLoading) {
+    return (
+      <SelectorContainer>
+        <LoadingMessage>Chargement des bases de données...</LoadingMessage>
+      </SelectorContainer>
+    );
+  }
+
+  console.log('[DatabaseSelector] Rendering with databases:', databaseList);
 
   return (
     <SelectorContainer>
-      <SelectorTitle>Choose a database</SelectorTitle>
+      <SelectorTitle>Choisir une base de données</SelectorTitle>
 
-      <CreateNewButton onClick={onCreateNew}>
+      <CreateNewButton onClick={() => {
+        console.log('[DatabaseSelector] Create new button clicked');
+        onCreateNew();
+      }}>
         <Icon iconName="add" $size="16px" />
-        Create new database
+        Créer une nouvelle base
       </CreateNewButton>
 
       {databaseList.length > 0 && (
         <>
-          <Divider>or link existing</Divider>
+          <Divider>ou lier une base existante</Divider>
           <DatabaseList>
             {databaseList.map((db) => (
               <DatabaseItem key={db.id} onClick={() => onSelect(db.id)}>
                 <Icon iconName="table_chart" $size="16px" />
-                <span>{db.title || 'Untitled Database'}</span>
+                <span>{db.title || 'Base sans titre'}</span>
                 <DatabaseMeta>
-                  {db.rows.length} rows · {db.properties.length} properties
+                  {db.nb_rows || 0} lignes · {db.nb_properties || 0} propriétés
                 </DatabaseMeta>
               </DatabaseItem>
             ))}
@@ -57,18 +70,31 @@ export const DatabaseBlock = createReactBlockSpec(
   },
   {
     render: ({ block, editor }) => {
-      const { createDatabase } = useDatabaseStore();
+      const { mutate: createDatabase } = useCreateDatabase();
       const databaseId = block.props.databaseId as string;
       const [showSelector, setShowSelector] = React.useState(!databaseId);
 
+      console.log('[DatabaseBlock] Rendering - databaseId:', databaseId, 'showSelector:', showSelector);
+
       const handleCreateNew = () => {
-        const newDatabase = createDatabase('Untitled Database');
-        queueMicrotask(() => {
-          editor.updateBlock(block, {
-            props: { databaseId: newDatabase.id },
-          });
-        });
-        setShowSelector(false);
+        console.log('[DatabaseBlock] handleCreateNew called');
+        createDatabase(
+          { title: 'Base sans titre' },
+          {
+            onSuccess: (newDatabase) => {
+              console.log('[DatabaseBlock] Database created successfully:', newDatabase);
+              queueMicrotask(() => {
+                editor.updateBlock(block, {
+                  props: { databaseId: newDatabase.id },
+                });
+              });
+              setShowSelector(false);
+            },
+            onError: (error) => {
+              console.error('[DatabaseBlock] Failed to create database:', error);
+            },
+          }
+        );
       };
 
       const handleSelectExisting = (selectedId: string) => {
@@ -94,7 +120,7 @@ export const DatabaseBlock = createReactBlockSpec(
       if (!databaseId) {
         return (
           <Container>
-            <LoadingMessage>Loading database...</LoadingMessage>
+            <LoadingMessage>Chargement de la base de données...</LoadingMessage>
           </Container>
         );
       }

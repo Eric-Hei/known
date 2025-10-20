@@ -177,7 +177,7 @@ export const DropdownMenu = ({
                 $align="center"
                 $justify="space-between"
                 $background={colorsTokens['greyscale-000']}
-                $color={colorsTokens['primary-600']}
+                $color={option.danger ? colorsTokens['danger-600'] : colorsTokens['primary-600']}
                 $padding={{ vertical: 'xs', horizontal: 'base' }}
                 $width="100%"
                 $gap={spacingsTokens['base']}
@@ -194,13 +194,13 @@ export const DropdownMenu = ({
                     border-bottom-right-radius: 4px;
                   `}
                 font-size: var(--c--theme--font--sizes--sm);
-                  color: var(--c--theme--colors--greyscale-1000);
+                  color: ${option.danger ? 'var(--c--theme--colors--danger-600)' : 'var(--c--theme--colors--greyscale-1000)'};
                   font-weight: 500;
                   cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
                   user-select: none;
 
                   &:hover {
-                    background-color: var(--c--theme--colors--greyscale-050);
+                    background-color: ${option.danger ? 'var(--c--theme--colors--danger-050)' : 'var(--c--theme--colors--greyscale-050)'};
                   }
 
                   &:focus-visible {

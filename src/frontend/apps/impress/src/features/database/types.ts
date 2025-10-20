@@ -57,9 +57,12 @@ export interface SelectOption {
 export interface PropertyConfig {
   id: string;
   name: string;
-  type: PropertyType;
-  options?: SelectOption[]; // For SELECT and MULTI_SELECT
-  relationTo?: string; // For RELATION type
+  type: PropertyType; // Required - normalized from property_type or type
+  property_type?: string; // Backend uses snake_case
+  config?: any; // Backend stores options in config
+  order?: number;
+  options?: SelectOption[]; // For SELECT and MULTI_SELECT (legacy)
+  relationTo?: string; // For RELATION type (legacy)
 }
 
 export interface PropertyValue {
@@ -70,9 +73,13 @@ export interface PropertyValue {
 export interface DatabaseRow {
   id: string;
   properties: Record<string, any>; // propertyId -> value
-  createdAt: string;
-  updatedAt: string;
-  pageId?: string; // Optional link to a page
+  createdAt: string; // Required - normalized from created_at or createdAt
+  updatedAt: string; // Required - normalized from updated_at or updatedAt
+  created_at?: string; // Backend uses snake_case
+  updated_at?: string; // Backend uses snake_case
+  pageId?: string; // Optional link to a page (legacy)
+  page_id?: string; // Backend uses snake_case
+  order?: number;
 }
 
 export interface Filter {
@@ -90,16 +97,19 @@ export interface Sort {
 export interface ViewConfig {
   id: string;
   name: string;
-  type: ViewType;
-  filters: Filter[];
-  sorts: Sort[];
-  visibleProperties: string[]; // Array of property IDs
+  type: ViewType; // Required - normalized from view_type or type
+  view_type?: string; // Backend uses snake_case
+  filters: Filter[]; // Always an array after normalization
+  sorts: Sort[]; // Always an array after normalization
+  config?: any; // Backend stores view-specific config here
+  order?: number;
+  visibleProperties: string[]; // Array of property IDs - always an array after normalization
   // Board-specific
-  groupByProperty?: string; // For BOARD view
+  groupByProperty?: string; // For BOARD view (legacy)
   // Calendar-specific
-  dateProperty?: string; // For CALENDAR view
+  dateProperty?: string; // For CALENDAR view (legacy)
   // Gallery-specific
-  coverProperty?: string; // For GALLERY view
+  coverProperty?: string; // For GALLERY view (legacy)
 }
 
 export interface Database {
@@ -108,12 +118,22 @@ export interface Database {
   description?: string;
   icon?: string;
   cover?: string;
-  properties: PropertyConfig[];
-  rows: DatabaseRow[];
-  views: ViewConfig[];
-  activeViewId: string;
-  createdAt: string;
-  updatedAt: string;
+  properties: PropertyConfig[]; // Always an array after normalization
+  rows: DatabaseRow[]; // Always an array after normalization
+  views: ViewConfig[]; // Always an array after normalization
+  accesses?: any[]; // Access control
+  abilities?: any; // User abilities
+  creator?: any; // Creator info
+  activeViewId?: string; // Local UI state (not from backend)
+  createdAt?: string; // Optional for backward compatibility
+  updatedAt?: string; // Optional for backward compatibility
+  created_at?: string; // Backend uses snake_case
+  updated_at?: string; // Backend uses snake_case
+  deleted_at?: string | null;
+  // List view fields
+  nb_properties?: number;
+  nb_rows?: number;
+  nb_views?: number;
 }
 
 export interface DatabaseBlock {
