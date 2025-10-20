@@ -20,22 +20,46 @@ export const applyFilter = (
 
   switch (filter.operator) {
     case FilterOperator.IS_EMPTY:
+      if (Array.isArray(value)) {
+        return value.length === 0;
+      }
       return value === undefined || value === null || value === '';
 
     case FilterOperator.IS_NOT_EMPTY:
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
       return value !== undefined && value !== null && value !== '';
 
     case FilterOperator.EQUALS:
+      // For MULTI_SELECT (array), check if array contains the value
+      if (Array.isArray(value)) {
+        return value.includes(filter.value);
+      }
       return value === filter.value;
 
     case FilterOperator.NOT_EQUALS:
+      // For MULTI_SELECT (array), check if array does NOT contain the value
+      if (Array.isArray(value)) {
+        return !value.includes(filter.value);
+      }
       return value !== filter.value;
 
     case FilterOperator.CONTAINS:
+      // For MULTI_SELECT (array), check if array contains the value
+      if (Array.isArray(value)) {
+        return value.includes(filter.value);
+      }
+      // For TEXT fields, check if string contains the filter value
       if (typeof value !== 'string') return false;
       return value.toLowerCase().includes(String(filter.value).toLowerCase());
 
     case FilterOperator.NOT_CONTAINS:
+      // For MULTI_SELECT (array), check if array does NOT contain the value
+      if (Array.isArray(value)) {
+        return !value.includes(filter.value);
+      }
+      // For TEXT fields, check if string does NOT contain the filter value
       if (typeof value !== 'string') return true;
       return !value.toLowerCase().includes(String(filter.value).toLowerCase());
 
@@ -228,10 +252,14 @@ export const getAvailableOperators = (propertyType: PropertyType): FilterOperato
       ];
 
     case PropertyType.SELECT:
-    case PropertyType.MULTI_SELECT:
       return [
         FilterOperator.EQUALS,
         FilterOperator.NOT_EQUALS,
+        ...common,
+      ];
+
+    case PropertyType.MULTI_SELECT:
+      return [
         FilterOperator.CONTAINS,
         FilterOperator.NOT_CONTAINS,
         ...common,

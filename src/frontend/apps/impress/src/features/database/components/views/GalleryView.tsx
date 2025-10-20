@@ -100,19 +100,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ database, viewId }) =>
         <Controls>
           <SizeSelector>
             <SizeButton
-              active={cardSize === 'small'}
+              $active={cardSize === 'small'}
               onClick={() => setCardSize('small')}
             >
               S
             </SizeButton>
             <SizeButton
-              active={cardSize === 'medium'}
+              $active={cardSize === 'medium'}
               onClick={() => setCardSize('medium')}
             >
               M
             </SizeButton>
             <SizeButton
-              active={cardSize === 'large'}
+              $active={cardSize === 'large'}
               onClick={() => setCardSize('large')}
             >
               L
@@ -121,7 +121,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ database, viewId }) =>
         </Controls>
       </GalleryHeader>
 
-      <GalleryGrid cardWidth={cardSizes[cardSize]}>
+      <GalleryGrid $cardWidth={cardSizes[cardSize]}>
         {filteredRows.map((row) => {
           const title = row.properties[titleProperty?.id] || 'Untitled';
           const isEditing = editingCard === row.id;
@@ -230,26 +230,26 @@ const SizeSelector = styled.div`
   border-radius: 6px;
 `;
 
-const SizeButton = styled.button<{ active: boolean }>`
+const SizeButton = styled.button<{ $active: boolean }>`
   padding: 4px 12px;
-  background: ${(props) => (props.active ? 'white' : 'transparent')};
+  background: ${(props) => (props.$active ? 'white' : 'transparent')};
   border: none;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
-  color: ${(props) => (props.active ? '#37352f' : '#787774')};
+  color: ${(props) => (props.$active ? '#37352f' : '#787774')};
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: ${(props) => (props.active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none')};
+  box-shadow: ${(props) => (props.$active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none')};
 
   &:hover {
     color: #37352f;
   }
 `;
 
-const GalleryGrid = styled.div<{ cardWidth: number }>`
+const GalleryGrid = styled.div<{ $cardWidth: number }>`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(${(props) => props.cardWidth}px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(${(props) => props.$cardWidth}px, 1fr));
   gap: 16px;
   padding: 16px;
   overflow-y: auto;

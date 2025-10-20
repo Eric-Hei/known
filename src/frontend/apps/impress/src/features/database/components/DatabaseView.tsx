@@ -7,6 +7,7 @@ import { BoardView } from './views/BoardView';
 import { ListView } from './views/ListView';
 import { CalendarView } from './views/CalendarView';
 import { GalleryView } from './views/GalleryView';
+import { FilterBar } from './FilterBar';
 import { SELECT_COLORS } from '../types';
 
 interface DatabaseViewProps {
@@ -127,7 +128,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ databaseId }) => {
           {database.views.map((view) => (
             <ViewTab
               key={view.id}
-              active={view.id === database.activeViewId}
+              $active={view.id === database.activeViewId}
               onClick={() => setActiveView(databaseId, view.id)}
             >
               <ViewTabName>{view.name}</ViewTabName>
@@ -145,6 +146,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ databaseId }) => {
           ))}
           <AddViewButton onClick={handleAddView}>+ Add View</AddViewButton>
         </ViewTabs>
+
+        <ViewToolbar>
+          {activeView && <FilterBar database={database} viewId={activeView.id} />}
+        </ViewToolbar>
 
         <Actions>
           {showAddProperty ? (
@@ -294,6 +299,8 @@ const ViewsBar = styled.div`
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+  gap: 12px;
 `;
 
 const ViewTabs = styled.div`
@@ -302,15 +309,22 @@ const ViewTabs = styled.div`
   align-items: center;
 `;
 
-const ViewTab = styled.button<{ active?: boolean }>`
+const ViewToolbar = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+`;
+
+const ViewTab = styled.div<{ $active?: boolean }>`
   padding: 6px 12px;
-  border: none;
-  background: ${(props) => (props.active ? '#f7f7f7' : 'transparent')};
+  background: ${(props) => (props.$active ? '#f7f7f7' : 'transparent')};
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  color: ${(props) => (props.active ? '#37352f' : '#787774')};
-  font-weight: ${(props) => (props.active ? '600' : '400')};
+  color: ${(props) => (props.$active ? '#37352f' : '#787774')};
+  font-weight: ${(props) => (props.$active ? '600' : '400')};
   transition: background-color 0.2s;
   display: flex;
   align-items: center;
