@@ -45,13 +45,13 @@ export const DocEditor = ({ doc, versionId }: DocEditorProps) => {
         </Box>
       )}
       <Box
-        $maxWidth="868px"
+        $maxWidth="1152px"
         $width="100%"
         $height="100%"
         className="--docs--doc-editor"
       >
         <Box
-          $padding={{ horizontal: isDesktop ? '54px' : 'base' }}
+          $padding={{ horizontal: isDesktop ? '27px' : 'base' }}
           className="--docs--doc-editor-header"
         >
           {isVersion ? <DocVersionHeader /> : <DocHeader doc={doc} />}
